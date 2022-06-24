@@ -62,6 +62,16 @@ in
         SERIAL_CORE_CONSOLE = yes;
 
       }
+
+      {
+        USB_ROLE_SWITCH = yes;
+      }
+
+      {
+        DRM = yes;
+        DRM_SUN4I = yes;
+        DRM_PANEL_SIMPLE = yes;
+      }
     ]
   ;
 
@@ -70,6 +80,7 @@ in
 
   boot.cmdline = [
     # Ugh... :/
-    "loglevel=0"
+    "loglevel=9"
+    "drm.debug=0x7"
   ];
 }
