@@ -25,26 +25,50 @@ in
     config.wip.u-boot.lib.mkScript "${config.device.nameForDerivation}-boot.scr"
     (
       let
-        _initrd_offset = "0x22200000";
+        #_initrd_offset = "0x22200000";
         _bootargs = builtins.concatStringsSep " " [
           "loglevel=8"
           "panic=1"
 
           "console=ttyS0,115200"
-          "earlycon"
+          #"earlycon"
           #"earlycon=ms_uart,1F221000"
-          "earlyprintk=serial,ttyS0,115200"
+          #"earlyprintk=serial,ttyS0,115200"
 
-          #"root=/dev/mtdblock4"
-          #"rootfstype=squashfs"
-          #"ro"
-          #"init=/linuxrcXXX"
-
-          "root=/dev/mmcblk0p1"
-          "rootfstype=vfat"
-          "rootflags=rw,dirsync,relatime,fmask=0000,dmask=0000,allow_utime=0022,codepage=437,iocharset=utf8,shortname=mixed,tz=UTC,errors=remount-ro"
+          "root=/dev/mtdblock4"
+          "rootfstype=squashfs"
           "ro"
-          "init=/init"
+          "init=/linuxrc"
+
+          "mtdparts=NOR_FLASH:${
+            # Stock flash map:
+            #mtd0: 00060000 00010000 "BOOT"
+            #mtd1: 00200000 00010000 "KERNEL"
+            #mtd2: 00010000 00010000 "KEY_CUST"
+            #mtd3: 00020000 00010000 "LOGO"
+            #mtd4: 001c0000 00010000 "rootfs"    
+            #mtd5: 00370000 00010000 "miservice" 
+            #mtd6: 00770000 00010000 "customer"  
+            #mtd7: 000d0000 00010000 "appconfigs"
+
+            # This works!!
+            builtins.concatStringsSep "," [
+              "0x00060000(XBOOT)"
+              "0x00200000(XKERNEL)"
+              "0x00010000(XKEY_CUST)"
+              "0x00020000(XLOGO)"
+              "0x001c0000(rootfs)"
+              "0x00370000(miservice)"
+              "0x00770000(customer)"
+              "0x000d0000(appconfigs)"
+            ]
+          }"
+
+          #"root=/dev/mmcblk0p1"
+          #"rootfstype=vfat"
+          #"rootflags=rw,dirsync,relatime,fmask=0000,dmask=0000,allow_utime=0022,codepage=437,iocharset=utf8,shortname=mixed,tz=UTC,errors=remount-ro"
+          #"ro"
+          #"init=/init"
 
           "mma_heap=mma_heap_name0,miu=0,sz=0x1500000"
           "mma_memblock_remove=1"
@@ -84,10 +108,10 @@ in
         # Display on
         "gpio output 4 1"
 
-        "dcache off"
-        "fatinfo mmc 0"
-        "fatload mmc 0 ${_initrd_offset} initrd"
-        "dcache on"
+        #"dcache off"
+        #"fatinfo mmc 0"
+        #"fatload mmc 0 ${_initrd_offset} initrd"
+        #"dcache on"
 
         buzz
         buzz
@@ -108,8 +132,6 @@ in
         buzz
 
         "reset"
-
-        #"bootm 0x22000000 ${_initrd_offset}"
       ]
     )
   ;
@@ -126,8 +148,8 @@ in
   build.hack = pkgs.runCommandNoCC "miyoomini" {} ''
     mkdir -vp $out
       cp -v ${config.build.bootscript} $out/boot.scr
-      #cp -v ${config.build.initramfs}  $out/initrd
-      cp -v ${config.build.testinit}/bin/*  $out/init
   '';
+      #cp -v ${config.build.initramfs}  $out/initrd
+      #cp -v ${config.build.testinit}/bin/*  $out/init
 
 }
