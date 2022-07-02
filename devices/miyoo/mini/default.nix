@@ -27,18 +27,22 @@ in
       let
         #_initrd_offset = "0x22200000";
         _bootargs = builtins.concatStringsSep " " [
-          "loglevel=8"
-          "panic=1"
-
           "console=ttyS0,115200"
-          #"earlycon"
-          #"earlycon=ms_uart,1F221000"
-          #"earlyprintk=serial,ttyS0,115200"
 
-          "root=/dev/mtdblock4"
+          "root=/dev/mtdblock4" # XXX: change to part label `rootfs`
           "rootfstype=squashfs"
           "ro"
           "init=/linuxrc"
+
+          "mma_heap=mma_heap_name0,miu=0,sz=0x1500000"
+          "mma_memblock_remove=1"
+          "highres=off"
+
+          "mmap_reserved=fb,miu=0,sz=0x300000,max_start_off=0x7C00000,max_end_off=0x7F00000"
+          "LX_MEM=0x7f00000"
+
+          # Makes it reset on panic, instead of being stuck.
+          "panic=1"
 
           "mtdparts=NOR_FLASH:${
             # Stock flash map:
@@ -51,33 +55,17 @@ in
             #mtd6: 00770000 00010000 "customer"  
             #mtd7: 000d0000 00010000 "appconfigs"
 
-            # This works!!
+            # Amended flash map:
+            # NOTE: U-Boot environment is read-only with this map.
+            # TODO: Investigate making a discrete mtd partition for the environment.
             builtins.concatStringsSep "," [
-              "0x00060000(XBOOT)"
-              "0x00200000(XKERNEL)"
-              "0x00010000(XKEY_CUST)"
-              "0x00020000(XLOGO)"
-              "0x001c0000(rootfs)"
-              "0x00370000(miservice)"
-              "0x00770000(customer)"
-              "0x000d0000(appconfigs)"
+              "0x00060000(BOOT)ro"
+              "0x00200000(KERNEL)ro"
+              "0x00010000(KEY_CUST)ro"
+              "0x00020000(LOGO)" # Kept rw so user software can change logos
+              "-(rootfs)"
             ]
           }"
-
-          #"root=/dev/mmcblk0p1"
-          #"rootfstype=vfat"
-          #"rootflags=rw,dirsync,relatime,fmask=0000,dmask=0000,allow_utime=0022,codepage=437,iocharset=utf8,shortname=mixed,tz=UTC,errors=remount-ro"
-          #"ro"
-          #"init=/init"
-
-          "mma_heap=mma_heap_name0,miu=0,sz=0x1500000"
-          "mma_memblock_remove=1"
-          "highres=off"
-
-          "mmap_reserved=fb,miu=0,sz=0x300000,max_start_off=0x7C00000,max_end_off=0x7F00000"
-          "LX_MEM=0x7f00000"
-
-          # "powerkey=1"
         ];
         buzz = "gpio out 48 0; sleepms 100; gpio out 48 1; sleepms 150;";
       in
