@@ -34,20 +34,18 @@ in
   ];
 
   build.sdcard = pkgs.callPackage (
-    { runCommandNoCC, nameForDerivation }:
+    { runCommandNoCC, nameForDerivation, dosfstools }:
 
     # XXX temp
-    runCommandNoCC "qemu-${nameForDerivation}" {} ''
+    runCommandNoCC "qemu-${nameForDerivation}" {
+      nativeBuildInputs = [
+        dosfstools
+      ];
+    } ''
       dd if=/dev/zero of=$out bs=1M count=$(( 32 ))
+      mkfs.fat -v -n "untitled" $out
     ''
   ) { inherit nameForDerivation; };
 
-  build.spiflash = pkgs.callPackage (
-    { runCommandNoCC, nameForDerivation }:
-
-    # XXX temp
-    runCommandNoCC "qemu-${nameForDerivation}" {} ''
-      dd if=/dev/zero of=$out bs=1024 count=$(( 0xd70000 / 1024 ))
-    ''
-  ) { inherit nameForDerivation; };
+  build.spiflash = config.build.TEMProotfs;
 }
