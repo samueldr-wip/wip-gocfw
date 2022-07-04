@@ -3,6 +3,7 @@
 {
   imports = [
     ./initramfs.nix
+    ./rootfs.nix
   ];
 
   celun.system.automaticCross = true;
