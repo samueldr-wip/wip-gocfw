@@ -19,6 +19,13 @@
       # No on-screen console, ever
       VT_CONSOLE = no;
       FRAMEBUFFER_CONSOLE = no;
+
+      # Squashfs
+      MISC_FILESYSTEMS = yes;
+      SQUASHFS = yes;
+      SQUASHFS_XZ = yes;
+      # FAT
+      VFAT_FS = yes;
     };
     features = {
       printk = lib.mkDefault true;
@@ -28,6 +35,8 @@
       vt = lib.mkDefault true;
       graphics = lib.mkDefault true;
       logo = lib.mkDefault true;
+
+      block = true;
     };
     logo = ./loading.png;
   };
