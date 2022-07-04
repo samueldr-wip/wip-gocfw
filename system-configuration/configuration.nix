@@ -30,6 +30,11 @@
       SQUASHFS_XZ = yes;
       # FAT
       VFAT_FS = yes;
+      NLS_CODEPAGE_437 = yes;
+      NLS_ISO8859_1 = yes;
+
+      # Required
+      POSIX_TIMERS = yes;
     };
     features = {
       printk = lib.mkDefault true;
