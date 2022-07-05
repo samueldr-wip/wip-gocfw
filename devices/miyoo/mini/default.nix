@@ -52,4 +52,11 @@
       ]
     }"
   ];
+
+  build.firmwareUpgrade = pkgs.callPackage ./firmware-upgrade.nix {
+    rootfs = config.build.TEMProotfs;
+    # TODO have version be an option of the games os thingy
+    version = "games-os-20220701.001";
+    bootargs = builtins.concatStringsSep " " config.boot.cmdline;
+  };
 }
