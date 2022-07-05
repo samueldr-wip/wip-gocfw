@@ -1,6 +1,10 @@
 { config, lib, pkgs, ... }:
 
 {
+  imports = [
+    ./vendor
+  ];
+
   device = {
     name = "miyoo/mini";
   };
