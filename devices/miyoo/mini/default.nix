@@ -12,9 +12,14 @@
   boot.cmdline = [
     "console=ttyS0,115200"
 
-    "root=mtd:rootfs"
+    # cannot be used with the vendor kernel
+    # "root=mtd:rootfs"
+    "root=/dev/mtdblock4"
     "rootfstype=squashfs"
     "ro"
+
+    # Required here with this device vendor kernel config
+    "init=/init"
 
     # Misc. kernel params from the vendor image.
     "mma_heap=mma_heap_name0,miu=0,sz=0x1500000"
