@@ -85,9 +85,9 @@ in
       # https://git.busybox.net/busybox/tree/examples/inittab
       # TODO: inittab submodule
       "/etc/inittab" = pkgs.writeTextDir "/etc/inittab" ''
-        # Allow root login on the `console=` param.
-        # (Or when missing, a default console may be launched on e.g. serial)
-        # No console will be available on other valid consoles.
+        # Allow login
+        # Note that unless the console is listed here, no login facilities will
+        # be provided on them.
         ${concatMapStringsSep "\n" (
           console: "${console}::respawn:${extraUtils}/bin/getty -l ${extraUtils}/bin/login 0 ${console}"
         ) [
@@ -103,6 +103,9 @@ in
         ::sysinit:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/mount-basic-mounts
         ::wait:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/network-setup
         ::wait:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/logging-setup
+        # XXX
+        ::wait:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/vendor-kernel-modules
+        # Needs to happen after hardware init
         ::wait:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/mount-sdcard
 
         # Splash text is shown when the system is ready.
@@ -223,7 +226,7 @@ in
         mkdir -p /mnt/SDCARD
         # XXX: configurable device?
         # XXX: using mdev?
-        mount -t vfat -o dirsync /dev/sdb /mnt/SDCARD
+        mount -t vfat -o iocharset=utf8,dirsync /dev/mmcblk0p1 /mnt/SDCARD
       '')
     ];
 
