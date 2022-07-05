@@ -21,7 +21,6 @@ in
     { runCommandNoCC
     , squashfsTools
     , cpio
-    , busybox
     }:
 
     runCommandNoCC "rootfs.squashfs-${nameForDerivation}" {
@@ -72,11 +71,12 @@ in
       # Allow root login on the `console=` param.
       # (Or when missing, a default console may be launched on e.g. serial)
       # No console will be available on other valid consoles.
-      console::respawn:${extraUtils}/bin/getty -l ${extraUtils}/bin/login 0 console
       ${concatMapStringsSep "\n" (
         console: "${console}::respawn:${extraUtils}/bin/getty -l ${extraUtils}/bin/login 0 ${console}"
       ) [
-        # TODO make *extra* consoles configurable
+        # TODO: make default "console" opt-out
+        "console"
+        # TODO: make *extra* consoles configurable
         # "ttyS0"
         # "ttyGS0"
         # "tty2"
@@ -133,6 +133,12 @@ in
       mkdir -p $out/bin
       ln -s ${extraUtils}/bin/sh $out/bin/sh
     '';
+
+    # Under some conditions, the rootfs is actually read-only and mountpoints
+    # need to be created beforehand
+    "/" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs" {} ''
+      mkdir -p $out/{proc,sys,dev,mnt}
+    '';
   };
 
   examples.hello-wip-games-os.extraUtils.packages = [
@@ -149,6 +155,7 @@ in
       '';
     }
 
+    # TODO: explore using fstab
     (pkgs.writeScriptBin "mount-basic-mounts" ''
       #!/bin/sh
 
@@ -158,6 +165,10 @@ in
       mount -t proc proc /proc
       mount -t sysfs sys /sys
       mount -t devtmpfs devtmpfs /dev
+      # Work around systems where the squashfs backed rootfs is deeply read-only.
+      mount -t tmpfs tmpfs /mnt
+      # TODO: make optional
+      mount -t debugfs none /sys/kernel/debug/
     '')
 
     # This does not actually do *networking*, but sets-up some basic
