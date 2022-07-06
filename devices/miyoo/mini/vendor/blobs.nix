@@ -105,7 +105,15 @@ in
 
           mkdir -p $out/modules/
           cp -vr rootfs/config/modules/4.9.84 $out/modules/4.9.84
-          cp -vr rootfs/config/lib $out/lib
+          mkdir -p $out/lib
+          rm -r rootfs/lib/modules
+          mv -vt $out/lib rootfs/lib/*
+          mv -vt $out/lib rootfs/config/lib/*
+          mv -vt $out/lib rootfs/customer/lib/*
+          (
+          cd $out/lib
+          rm -v libgamename.so
+          )
 
           mkdir -p $out/config/
           cp -vt $out/config rootfs/config/{fbdev.ini,mmap.ini,riu_r,config_tool}
