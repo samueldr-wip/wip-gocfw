@@ -6,6 +6,7 @@
       mkdir -p $out/lib/modules
       cp -vr ${config.device.config.miyoo-mini.vendorBlobs}/modules/* $out/lib/modules/
     '';
+    # Files under `/config` are required at that location by the vendor kernel.
     "/config" = pkgs.runCommandNoCC "miyoo-mini-vendor-config" {} ''
       mkdir -p $out/
       cp -vr ${config.device.config.miyoo-mini.vendorBlobs}/config $out/config
@@ -15,16 +16,31 @@
     # This script is mostly verbatim from the vendor image.
     (pkgs.writeScriptBin "vendor-kernel-modules" ''
       #!/bin/sh
+      
+      #
+      # Assumed generic kernel modules
+      #
+
+      # Filesystems
       insmod /lib/modules/4.9.84/nls_utf8.ko
-      insmod /lib/modules/4.9.84/mmc_core.ko
-      insmod /lib/modules/4.9.84/mmc_block.ko
-      insmod /lib/modules/4.9.84/kdrv_sdmmc.ko
       insmod /lib/modules/4.9.84/fat.ko
       insmod /lib/modules/4.9.84/msdos.ko
       insmod /lib/modules/4.9.84/vfat.ko
-      insmod /lib/modules/4.9.84/ntfs.ko
-      insmod /lib/modules/4.9.84/ehci-hcd.ko
+      # Not supported, not recommended
+      # insmod /lib/modules/4.9.84/ntfs.ko
+
+      # Subsystems
+      insmod /lib/modules/4.9.84/mmc_core.ko
+      insmod /lib/modules/4.9.84/mmc_block.ko
       insmod /lib/modules/4.9.84/sd_mod.ko
+      # Not used, does not provide USB functionality
+      # insmod /lib/modules/4.9.84/ehci-hcd.ko
+
+      #
+      # Vendor modules
+      #
+
+      insmod /lib/modules/4.9.84/kdrv_sdmmc.ko
       insmod /lib/modules/4.9.84/mdrv_crypto.ko
       insmod /lib/modules/4.9.84/mhal.ko
       insmod /lib/modules/4.9.84/mi_common.ko
@@ -89,6 +105,8 @@
 
       major=`cat /proc/devices | busybox awk "\\$2==\""mi_poll"\" {print \\$1}"`
       busybox mknod /dev/mi_poll c $major 0
+
+      # Added last, as it relies on previous modules
       insmod /lib/modules/4.9.84/fbdev.ko
 
       # Refresh /dev
