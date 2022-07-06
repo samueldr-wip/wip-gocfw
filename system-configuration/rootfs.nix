@@ -165,7 +165,7 @@ in
       # Under some conditions, the rootfs is actually read-only and mountpoints
       # need to be created beforehand
       "/" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs" {} ''
-        mkdir -p $out/{proc,sys,dev,mnt}
+        mkdir -p $out/{proc,sys,dev,mnt,tmp}
       '';
     };
 
@@ -195,6 +195,7 @@ in
         mount -t devtmpfs devtmpfs /dev
         # Work around systems where the squashfs backed rootfs is deeply read-only.
         mount -t tmpfs tmpfs /mnt
+        mount -t tmpfs tmpfs /tmp
         # TODO: make optional
         mount -t debugfs none /sys/kernel/debug/
       '')
