@@ -154,6 +154,14 @@ in
         ln -s ${extraUtils}/bin/sh $out/bin/sh
       '';
 
+      # FHS compat
+      "lib/ld-linux" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs-ld-linux" {} ''
+        mkdir -p $out/lib
+        for f in ${extraUtils}/lib/ld-linux*.so*; do
+          ln -s "$f" $out/lib/
+        done
+      '';
+
       # Under some conditions, the rootfs is actually read-only and mountpoints
       # need to be created beforehand
       "/" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs" {} ''
