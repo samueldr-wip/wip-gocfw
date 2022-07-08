@@ -3,6 +3,7 @@
 {
   imports = [
     ./initramfs.nix
+    ./overlay.nix
     ./rootfs.nix
   ];
 
