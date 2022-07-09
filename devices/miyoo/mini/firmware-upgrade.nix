@@ -10,7 +10,7 @@
 let
   payloadOffset = "0x4000";  # The vendor U-Boot will read 0x4000 bytes for the script.
   rootfsOffset = "0x290000"; # Partition offset
-  rootfsSize =   "0xd70000"; # Partition size (subsuming following partitions)
+  rootfsPartSize = "0xd70000"; # Partition size (subsuming following partitions)
   updateScript = writeText "update-script" ''
     build:${version}
 
@@ -21,7 +21,7 @@ let
     fatload mmc 0 0x21000000 $(SdUpgradeImage) 0 ${payloadOffset}
 
     # Write the rootfs
-    sf update 0x21000000 ${rootfsOffset} ${rootfsSize}
+    sf update 0x21000000 ${rootfsOffset} ${rootfsPartSize}
 
     # Update boot args
     env set bootargs '${bootargs}'
@@ -86,13 +86,21 @@ let
 in
 runCommandNoCC "firmware-upgrade-${version}" {
   inherit rootfs;
+  inherit rootfsPartSize;
 } ''
+  size=$(stat -c %s "$rootfs")
+  if (( size > rootfsPartSize )); then
+    printf "error: rootfs size (%d bytes) larger than max (%d bytes)" "$size" "$rootfsPartSize"
+    exit 1
+  fi
+
   (PS4=" $ "; set -x
   mkdir -p $out
   # Start the firmware image with the update script
   cat "${updateScript}" > "$out/miyoo283_fw.img"
+
   # Pad the rootfs payload to the size of the SPI flash, makes the script easier to write.
-  dd if="/dev/zero"   of="payload.img"          bs=$(( ${rootfsSize} )) count=$(( 1 )) conv=notrunc
+  dd if="/dev/zero"   of="payload.img"          bs=$(( rootfsPartSize )) count=$(( 1 )) conv=notrunc
   # Write the rootfs in the NULL padded file
   dd if="$rootfs"     of="payload.img"          bs=1024 conv=notrunc
 
