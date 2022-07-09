@@ -108,8 +108,8 @@ in
         # Needs to happen after hardware init
         ::wait:${extraUtils}/bin/sh -l -c ${extraUtils}/bin/mount-sdcard
 
-        # Splash text is shown when the system is ready.
-        ::once:${extraUtils}/bin/ply-image --clear=0xffffff /etc/splash.png
+        # Hello app
+        console::respawn:${extraUtils}/bin/hello
 
         ::restart:/bin/init
         ::ctrlaltdel:/bin/poweroff
@@ -180,6 +180,40 @@ in
         package = pkgs.ply-image;
         extraCommand = ''
           cp -f ${pkgs.glibc.out}/lib/libpthread.so.0 $out/lib/
+        '';
+      }
+
+      { package = pkgs.luajit; }
+      {
+        package = pkgs.SDL;
+        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL}/lib/*.so*'';
+      }
+      {
+        package = pkgs.SDL_ttf;
+        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL_ttf}/lib/*.so*'';
+      }
+      {
+        package = pkgs.SDL_image;
+        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL_image}/lib/*.so*'';
+      }
+      {
+        package = pkgs.games-os.hello;
+        extraCommand = ''
+          mkdir -p $out/share/
+          cp -fr -t $out/share/ ${pkgs.games-os.hello}/share/*
+          (
+          cd $out/bin
+          chmod -R +w .
+          cat <<EOF > hello
+          #!/bin/sh
+          set -x
+          export APP_PATH
+          APP_PATH="$out/share/games-os-hello/"
+          export SDL_NOMOUSE
+          SDL_NOMOUSE=1 # XXX
+          $out/bin/luajit "\$APP_PATH/hello.lua" "\$@"
+          EOF
+          )
         '';
       }
 
