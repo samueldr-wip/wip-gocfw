@@ -1,5 +1,14 @@
-{ ... }:
+{ config, lib, ... }:
 
+let
+  inherit (lib)
+    mkIf
+  ;
+  inherit (config.nixpkgs.crossSystem)
+    is32bit
+  ;
+  isCross = config.nixpkgs.crossSystem != null;
+in
 {
   nixpkgs.overlays = [
     (self: super: {
@@ -12,5 +21,22 @@
         ];
       });
     })
+    (mkIf (isCross && is32bit)
+      (self: super: {
+        luajit = super.luajit.overrideAttrs(
+          { makeFlags, ... }:
+          {
+            makeFlags = makeFlags ++ [
+              # XXX this is the wrong solution
+              # This will only work when cross-compiling from x86_64.
+              # ¯\_(ツ)_/¯
+              # I can't get a "non-cross" gcc_multi from the "crossed" Nixpkgs...
+              # And even then, non pkgsi686Linux multi doesn't even work with -m32 ???
+              "HOST_CC=${(import self.pkgs.path {}).pkgsi686Linux.gcc}/bin/gcc"
+            ];
+          }
+        );
+      })
+    )
   ];
 }
