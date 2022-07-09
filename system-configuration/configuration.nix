@@ -36,6 +36,7 @@
 
       # Required
       POSIX_TIMERS = yes;
+      FUTEX = yes;
     };
     features = {
       printk = lib.mkDefault true;
