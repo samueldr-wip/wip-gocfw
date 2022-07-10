@@ -20,6 +20,9 @@ in
           ../pkgs/SDL_ttf/0001-Backport-Fixed-bug-3762-Can-t-render-characters-with.patch
         ];
       });
+      SDL = super.SDL.override {
+        pulseaudioSupport = false;
+      };
     })
     (mkIf (isCross && is32bit)
       (self: super: {
