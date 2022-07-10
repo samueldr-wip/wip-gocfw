@@ -206,7 +206,6 @@ in
           chmod -R +w .
           cat <<EOF > hello
           #!/bin/sh
-          set -x
           export APP_PATH
           APP_PATH="$out/share/games-os-hello/"
           export SDL_NOMOUSE
