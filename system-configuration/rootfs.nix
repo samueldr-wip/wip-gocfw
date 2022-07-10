@@ -29,7 +29,7 @@ in
     #        In other words, make a reusable submodule.
     wip.stage-1.enable = lib.mkForce true;
     # `xz` to hopefully cut ties with the whole closure.
-    wip.stage-1.compression = lib.mkForce "xz";
+    wip.stage-1.compression = "xz";
 
     wip.stage-1.contents = config.examples.hello-wip-games-os.rootfs.contents;
 
