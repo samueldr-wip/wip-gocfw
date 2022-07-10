@@ -1,6 +1,6 @@
 { buildUBoot, fetchFromGitHub }:
 
-buildUBoot {
+(buildUBoot {
   version = "2021.10";
   src = fetchFromGitHub {
     owner = "samueldr";
@@ -11,4 +11,7 @@ buildUBoot {
   defconfig = "powkiddy_v90_defconfig"; 
   extraMeta.platforms = ["armv5tel-linux"];         
   filesToInstall = ["u-boot-sunxi-with-spl.bin"];  
-}
+}).overrideAttrs({ ... }: {
+  # *sighs*
+  patches = [];
+})
