@@ -76,7 +76,7 @@ in
   ;
 
   # xz fails to uncompress due to lack of memory
-  wip.stage-1.compression = "gzip";
+  wip.stage-1.compression = lib.mkForce "gzip";
 
   boot.cmdline = [
     # Ugh... :/
