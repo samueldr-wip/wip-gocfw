@@ -23,6 +23,20 @@ in
       SDL = super.SDL.override {
         pulseaudioSupport = false;
       };
+      luajit = super.luajit.overrideAttrs(
+        { postPatch
+        , ... }:
+        {
+          # Target devices will often have absolutely no
+          # entropy, and absolutely no need for secure random.
+          # This will make lj_prng_seed_secure fall back to
+          # /dev/urandom, which is fine here.
+          postPatch = postPatch + ''
+            substituteInPlace src/lj_prng.c \
+              --replace SYS_getrandom NO_GETRANDOM_THANK_YOU
+          '';
+        }
+      );
     })
     (mkIf (isCross && is32bit)
       (self: super: {
