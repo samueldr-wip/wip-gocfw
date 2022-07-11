@@ -20,12 +20,6 @@ in
           ../pkgs/SDL_ttf/0001-Backport-Fixed-bug-3762-Can-t-render-characters-with.patch
         ];
       });
-      SDL = super.SDL.override {
-        pulseaudioSupport = false;
-        libGLSupported = false;
-        openglSupport = false;
-        x11Support = false;
-      };
       luajit = super.luajit.overrideAttrs(
         { postPatch
         , ... }:
@@ -40,6 +34,7 @@ in
           '';
         }
       );
+      SDL = self.callPackage ../pkgs/SDL { inherit (super) SDL; };
     })
     (mkIf (isCross && is32bit)
       (self: super: {
