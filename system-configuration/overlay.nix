@@ -15,11 +15,6 @@ in
       games-os = {
         hello = self.callPackage ../pkgs/hello { };
       };
-      SDL_ttf = super.SDL_ttf.overrideAttrs({ patches ? [], ... }: {
-        patches = patches ++ [
-          ../pkgs/SDL_ttf/0001-Backport-Fixed-bug-3762-Can-t-render-characters-with.patch
-        ];
-      });
       luajit = super.luajit.overrideAttrs(
         { postPatch
         , ... }:
@@ -35,6 +30,7 @@ in
         }
       );
       SDL = self.callPackage ../pkgs/SDL { inherit (super) SDL; };
+      SDL_ttf = self.callPackage ../pkgs/SDL_ttf { inherit (super) SDL_ttf; };
     })
     (mkIf (isCross && is32bit)
       (self: super: {
