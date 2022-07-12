@@ -77,11 +77,6 @@ in
 
       '';
 
-      "/etc/splash.png" = pkgs.runCommandNoCC "splash" { } ''
-        mkdir -p $out/etc
-        cp ${../artwork/splash_640x480.png} $out/etc/splash.png
-      '';
-
       # https://git.busybox.net/busybox/tree/examples/inittab
       # TODO: inittab submodule
       "/etc/inittab" = pkgs.writeTextDir "/etc/inittab" ''
