@@ -45,4 +45,10 @@ in
   ) { inherit nameForDerivation; };
 
   build.spiflash = config.build.TEMProotfs;
+
+  nixpkgs.overlays = [
+    (self: super: {
+      SDL = self.callPackage ../../powkiddy/v90/pkgs/SDL { inherit (super) SDL; };
+    })
+  ];
 }

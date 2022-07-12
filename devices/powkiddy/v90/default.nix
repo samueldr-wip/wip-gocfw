@@ -95,4 +95,10 @@ in
     "loglevel=9"
     "drm.debug=0x7"
   ];
+
+  nixpkgs.overlays = [
+    (self: super: {
+      SDL = self.callPackage ./pkgs/SDL { inherit (super) SDL; };
+    })
+  ];
 }
