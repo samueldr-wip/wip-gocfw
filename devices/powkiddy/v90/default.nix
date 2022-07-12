@@ -6,7 +6,13 @@ let
     u-boot = pkgs.callPackage ./mainline/u-boot { };
     kernel = pkgs.callPackage ./mainline/kernel { };
   };
-  selected = mainline;
+  vendor = {
+    provenance = "vendor";
+    inherit (mainline) u-boot;
+    kernel = pkgs.callPackage ./vendor/kernel { };
+  };
+  #selected = mainline;
+  selected = vendor;
 in
 {
   device = {
@@ -40,6 +46,7 @@ in
   wip.kernel.package = selected.kernel;
   wip.kernel.defconfig = "miyoo_defconfig";
 
+  wip.kernel.isModular = true;
   wip.kernel.structuredConfig =
     with lib.kernel;
     let
@@ -90,11 +97,37 @@ in
   # xz fails to uncompress due to lack of memory
   wip.stage-1.compression = lib.mkForce "gzip";
 
-  boot.cmdline = [
-    # Ugh... :/
-    "loglevel=9"
-    "drm.debug=0x7"
+  boot.cmdline = lib.mkMerge [
+    [
+      "console=tty0"
+      "console=ttyS1,115200"
+      "panic=5"
+    ]
+    (lib.mkIf (selected.provenance == "vendor") [
+      "miyoo.miyoo_snd=1"
+      "miyoo_kbd.miyoo_layout=1"
+      "miyoo_kbd.miyoo_ver=2"
+    ])
   ];
+
+  # TODO: if we want to build a common miyoo kernel, and load modules, this
+  #       could be done a bit like so:
+  #examples.hello-wip-games-os.rootfs.contents = {
+  #  "lib/modules" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-lib-modules" {} ''
+  #    mkdir -p $out/lib
+  #    cp -prf ${config.build.kernel}/lib/modules $out/lib/modules
+  #  '';
+  #};
+  #examples.hello-wip-games-os.extraUtils.packages = [
+  #  # This script is mostly verbatim from the vendor image.
+  #  (pkgs.writeScriptBin "vendor-kernel-modules" ''
+  #    #!/bin/sh
+  #
+  #    echo "::"
+  #    set -x
+  #    modprobe st7789sfb
+  #  '')
+  #];
 
   nixpkgs.overlays = [
     (self: super: {
