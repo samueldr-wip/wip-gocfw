@@ -1,4 +1,5 @@
 { stdenv
+, pkgsCross
 , lib
 , pkgs
 , luajit }:
@@ -6,6 +7,8 @@
 let
   isCross = (stdenv.hostPlatform != stdenv.buildPlatform);
   inherit (stdenv) is32bit;
+  # FIXME: fix cross-compilation to 32 bit from AArch64
+  stdenv32 = pkgsCross.gnu32.stdenv;
 in
 luajit.overrideAttrs(
   { postPatch
@@ -22,12 +25,7 @@ luajit.overrideAttrs(
     makeFlags =
       makeFlags
       ++ lib.optionals (isCross && is32bit) [
-        # XXX this is the wrong solution
-        # This will only work when cross-compiling from x86_64.
-        # ¯\_(ツ)_/¯
-        # I can't get a "non-cross" gcc_multi from the "crossed" Nixpkgs...
-        # And even then, non pkgsi686Linux multi doesn't even work with -m32 ???
-        "HOST_CC=${(import pkgs.path {}).pkgsi686Linux.gcc}/bin/gcc"
+        "HOST_CC=${stdenv32.cc}/bin/${stdenv32.cc.targetPrefix}gcc"
       ]
     ;
   }
