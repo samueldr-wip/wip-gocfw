@@ -33,36 +33,15 @@ in
 
     wip.stage-1.contents = config.examples.hello-wip-games-os.rootfs.contents;
 
-    # Builds 
-    build.TEMProotfs = pkgs.callPackage (
-      { runCommandNoCC
-      , squashfsTools
-      , cpio
-      }:
-
-      runCommandNoCC "rootfs.squashfs-${nameForDerivation}" {
-        nativeBuildInputs = [
-          cpio
-          squashfsTools
-        ];
-      } ''
-        mkdir fs
-        (
-        cd fs
-        PS4=" $ "; set -x
-        xzcat ${config.wip.stage-1.output.initramfs} | cpio -idv
-        )
-        (PS4=" $ "; set -x
-        mksquashfs fs \
-          "$out" \
-          -quiet \
-          -comp xz \
-          -b $(( 1024 * 1024 )) \
-          -Xdict-size 100% \
-          -all-root
-        )
-      ''
-    ) { };
+    build.TEMProotfs = (pkgs.celun.image-builder.evaluateFilesystemImage {
+      config = {
+        filesystem = "squashfs";
+        # Borrow the initramfs semantics to populate the rootfs
+        populateCommands = ''
+          xzcat ${config.wip.stage-1.output.initramfs} | "${pkgs.buildPackages.cpio}/bin/cpio" -idv
+        '';
+      };
+    }).config.output;
 
     # Co-opts the stage-1 infra to build a rootfs
     # FIXME: (read other FIXME) provide generic submodule
