@@ -66,6 +66,7 @@
 
   nixpkgs.overlays = [
     (self: super: {
+      SDL = self.callPackage ./pkgs/SDL { inherit (super) SDL; };
       miyooMiniSDK = self.callPackage ./pkgs/miyooMiniSDK { };
       games-os = super.games-os // {
         dotAppToMiniUIPak = self.callPackage ./pkgs/dotAppToMiniUIPak { };
