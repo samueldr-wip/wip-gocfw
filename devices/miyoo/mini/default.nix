@@ -63,4 +63,12 @@
     version = "games-os-20220701.001";
     bootargs = builtins.concatStringsSep " " config.boot.cmdline;
   };
+
+  nixpkgs.overlays = [
+    (self: super: {
+      games-os = super.games-os // {
+        dotAppToMiniUIPak = self.callPackage ./pkgs/dotAppToMiniUIPak { };
+      };
+    })
+  ];
 }
