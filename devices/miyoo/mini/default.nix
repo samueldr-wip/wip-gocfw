@@ -68,6 +68,7 @@
     (self: super: {
       SDL = self.callPackage ./pkgs/SDL { inherit (super) SDL; };
       miyooMiniSDK = self.callPackage ./pkgs/miyooMiniSDK { };
+      miyooMiniAdditionalKernelModules = self.callPackage ./pkgs/miyooMiniAdditionalKernelModules { };
       games-os = super.games-os // {
         dotAppToMiniUIPak = self.callPackage ./pkgs/dotAppToMiniUIPak { };
       };
