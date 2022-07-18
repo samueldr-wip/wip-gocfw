@@ -1,20 +1,27 @@
 { config, pkgs, ... }:
 
+let
+  writeScriptDir = name: text: pkgs.writeTextFile {
+    inherit name text;
+    executable = true;
+    destination = "${name}";
+  };
+in
 {
-  examples.hello-wip-games-os.rootfs.contents = {
+  games-os.stub.filesystem.contents = {
     "/lib/modules" = pkgs.runCommandNoCC "miyoo-mini-kernel-modules" {} ''
-      mkdir -p $out/lib/modules
-      cp -vr ${config.device.config.miyoo-mini.vendorBlobs}/modules/* $out/lib/modules/
+      mkdir -p $out/lib/modules/4.9.84
+      cp -vr ${config.device.config.miyoo-mini.vendorBlobs}/modules/4.9.84/* $out/lib/modules/4.9.84/
+      cp -vr ${pkgs.miyooMiniAdditionalKernelModules}/lib/modules/4.9.84/extra/* $out/lib/modules/4.9.84/
     '';
     # Files under `/config` are required at that location by the vendor kernel.
     "/config" = pkgs.runCommandNoCC "miyoo-mini-vendor-config" {} ''
       mkdir -p $out/
       cp -vr ${config.device.config.miyoo-mini.vendorBlobs}/config $out/config
     '';
-  };
-  examples.hello-wip-games-os.extraUtils.packages = [
+
     # This script is mostly verbatim from the vendor image.
-    (pkgs.writeScriptBin "vendor-kernel-modules" ''
+    "/etc/init.d/10-vendor-modules" = writeScriptDir "/etc/init.d/10-vendor-modules" ''
       #!/bin/sh
       
       #
@@ -111,6 +118,13 @@
 
       # Refresh /dev
       mdev -s
-    '')
-  ];
+    '';
+
+    # Additional modules
+    "/etc/init.d/11-kernel-modules" = writeScriptDir "/etc/init.d/11-kernel-modules" ''
+      #!/bin/sh
+
+      insmod /lib/modules/4.9.84/loop.ko
+    '';
+  };
 }

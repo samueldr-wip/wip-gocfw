@@ -58,11 +58,13 @@
   ];
 
   build.firmwareUpgrade = pkgs.callPackage ./firmware-upgrade.nix {
-    rootfs = config.build.TEMProotfs;
+    rootfs = config.games-os.stub.output.squashfs;
     # TODO have version be an option of the games os thingy
-    version = "games-os-20220701.001";
+    version = "gocfw-20220717.001";
     bootargs = builtins.concatStringsSep " " config.boot.cmdline;
   };
+
+  games-os.stub.userdataPartition = "/dev/mmcblk0p1";
 
   nixpkgs.overlays = [
     (self: super: {
