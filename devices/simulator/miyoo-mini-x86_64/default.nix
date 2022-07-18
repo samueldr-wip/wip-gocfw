@@ -33,19 +33,26 @@ in
     "ro"
   ];
 
-  build.sdcard = pkgs.callPackage (
-    { runCommandNoCC, nameForDerivation, dosfstools }:
-
-    # XXX temp
-    runCommandNoCC "qemu-${nameForDerivation}" {
-      nativeBuildInputs = [
-        dosfstools
+  build.sdcard = (pkgs.celun.image-builder.evaluateDiskImage {
+    config = {
+      partitioningScheme = "gpt";
+      partitions = [
+        {
+          name = "userdata";
+          filesystem = {
+            filesystem = "fat32";
+            extraPadding = 1024 * 1024 * 10;
+            populateCommands = ''
+              mkdir -p system
+              cp ${config.build.TEMProotfs} system/rootfs.img
+            '';
+          };
+        }
       ];
-    } ''
-      dd if=/dev/zero of=$out bs=1M count=$(( 32 ))
-      mkfs.fat -v -n "untitled" $out
-    ''
-  ) { inherit nameForDerivation; };
+    };
+  }).config.output;
 
-  build.spiflash = config.build.TEMProotfs;
+  build.spiflash = config.games-os.stub.output.squashfs;
+
+  games-os.stub.userdataPartition = "/dev/sdb1";
 }
