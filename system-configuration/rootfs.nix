@@ -118,7 +118,7 @@ in
       # Under some conditions, the rootfs is actually read-only and mountpoints
       # need to be created beforehand
       "/" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs" {} ''
-        mkdir -p $out/{proc,sys,dev,mnt,tmp}
+        mkdir -p $out/{proc,sys,dev,mnt,run,tmp}
       '';
     };
 
@@ -178,7 +178,6 @@ in
         mkdir -p /proc /sys /dev
         mount -t proc proc /proc
         mount -t sysfs sys /sys
-        mount -t devtmpfs devtmpfs /dev
         # Work around systems where the squashfs backed rootfs is deeply read-only.
         mount -t tmpfs tmpfs /mnt
         mount -t tmpfs tmpfs /tmp
@@ -219,9 +218,7 @@ in
         echo ":: SD card init"
         PS4=" $ "; set -x
         mkdir -p /mnt/SDCARD
-        # XXX: configurable device?
-        # XXX: using mdev?
-        mount -t vfat -o iocharset=utf8,dirsync ${config.games-os.stub.userdataPartition} /mnt/SDCARD
+        mount -o bind /run/gocfw/userdata /mnt/SDCARD
       '')
     ];
 
