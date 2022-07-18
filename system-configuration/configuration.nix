@@ -5,6 +5,7 @@
     ./initramfs.nix
     ./overlay.nix
     ./rootfs.nix
+    ./stub.nix
   ];
 
   celun.system.automaticCross = true;
