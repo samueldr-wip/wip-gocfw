@@ -12,39 +12,38 @@ in
     name = lib.mkForce "simulator/miyoo-armv5";
   };
 
+  # Target device uses initramfs.
+  wip.stage-1.enable = true;
+  wip.stage-1.output.initramfs = config.games-os.stub.filesystem.output;
+
   device.config.qemu = {
-    # With only 32, or even 64, scsi fails, so "SD card" block device doesn't show up.
-    memorySize = 32 * 3;
+    memorySize = 32;
 
     qemuOptions = [
-      # XXX no SPI (but provide SPI option for trimui compat?)
-      # XXX should be sdcard
-      #''-drive "if=scsi,file=${config.build.spiflash},format=raw,snapshot=on,index=0"''
-      ''-drive "file=${config.build.spiflash},format=raw,snapshot=on"''
+      ''-drive if=scsi,driver=file,filename=${config.build.sdcard},snapshot=on''
     ];
   };
 
-  boot.cmdline = [
-    "root=/dev/mtdblock0"
-    "rootfstype=squashfs"
-    "ro"
-  ];
-
-  build.sdcard = pkgs.callPackage (
-    { runCommandNoCC, nameForDerivation, dosfstools }:
-
-    # XXX temp
-    runCommandNoCC "qemu-${nameForDerivation}" {
-      nativeBuildInputs = [
-        dosfstools
+  build.sdcard = (pkgs.celun.image-builder.evaluateDiskImage {
+    config = {
+      partitioningScheme = "gpt";
+      partitions = [
+        {
+          name = "userdata";
+          filesystem = {
+            filesystem = "fat32";
+            extraPadding = 1024 * 1024 * 10;
+            populateCommands = ''
+              mkdir -p system
+              cp ${config.build.TEMProotfs} system/rootfs.img
+            '';
+          };
+        }
       ];
-    } ''
-      dd if=/dev/zero of=$out bs=1M count=$(( 32 ))
-      mkfs.fat -v -n "untitled" $out
-    ''
-  ) { inherit nameForDerivation; };
+    };
+  }).config.output;
 
-  build.spiflash = config.build.TEMProotfs;
+  games-os.stub.userdataPartition = "/dev/sda1";
 
   nixpkgs.overlays = [
     (self: super: {
