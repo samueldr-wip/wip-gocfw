@@ -65,6 +65,7 @@
   };
 
   games-os.stub.userdataPartition = "/dev/mmcblk0p1";
+  games-os.stub.userdataPartitionOptions = "iocharset=utf8,dirsync";
 
   nixpkgs.overlays = [
     (self: super: {
