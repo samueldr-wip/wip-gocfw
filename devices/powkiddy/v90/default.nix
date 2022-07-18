@@ -134,17 +134,34 @@ in
 
     (mkIf (selected.provenance == "vendor") {
       games-os.stub.filesystem.contents = {
+        /* # if modular
         "lib/modules" = pkgs.runCommandNoCC "${nameForDerivation}-lib-modules" {} ''
           mkdir -p $out/lib
           cp -prf ${config.build.kernel}/lib/modules $out/lib/modules
         '';
 
-        "/etc/init.d/70-debug" = writeScriptDir "/etc/init.d/70-debug" ''
+        "/etc/init.d/10-kernel-modules" = writeScriptDir "/etc/init.d/10-kernel-modules" ''
           #!/bin/sh
           
           echo ":: Inserting kernel modules"
           PS4=" $ "; set -x
           modprobe st7789sfb
+
+          # Add time before the console is "refreshed";
+          # the driver is a bit odd and otherwise the console won't be shown
+          # until some other app uses it and quits.
+          # TODO: add option to skip this (when not debugging)
+          sleep 2
+        '';
+        */
+
+        "/etc/init.d/11-refresh-display" = writeScriptDir "/etc/init.d/11-refresh-display" ''
+          #!/bin/sh
+
+          # Works around a quirk with the vendor display driver
+          # With this, the console will show up before an app is launched.
+          chvt 2
+          chvt 1
         '';
       };
 
