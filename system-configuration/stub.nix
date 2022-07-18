@@ -73,6 +73,16 @@ in
             Device name for the userdata partition.
           '';
         };
+        userdataPartitionOptions = mkOption {
+          type = types.str;
+          default = "";
+          description = ''
+            Mount options for the userdata storage.
+
+            Note that the target system must use the same options if it
+            wants to re-mount the sd card by itself.
+          '';
+        };
         extraUtils = {
           packages = mkOption {
             type = with types; listOf (oneOf [
@@ -127,7 +137,7 @@ in
       # Under some conditions, the rootfs is actually read-only and mountpoints
       # need to be created beforehand
       "/" = pkgs.runCommandNoCC "games-os-stub-rootfs" {} ''
-        mkdir -p $out/{proc,sys,dev,mnt,tmp}
+        mkdir -p $out/{proc,sys,dev,mnt,run,tmp}
       '';
 
       "/etc/profile" = writeScriptDir "/etc/profile" ''
@@ -149,21 +159,21 @@ in
         echo
         echo ":: Switching into selected system..."
         echo
-        
+
+        (
+        PS4=" $ "; set -x
+
+        mkdir -p /mnt/rootfs/proc
+        mount --move /proc /mnt/rootfs/proc
+        mkdir -p /mnt/rootfs/sys
+        mount --move /sys /mnt/rootfs/sys  
+        mkdir -p /mnt/rootfs/dev
+        mount --move /dev /mnt/rootfs/dev  
+        mkdir -p /mnt/rootfs/run
+        mount --move /run /mnt/rootfs/run  
+        )
+
         ${if (!config.wip.stage-1.enable) then ''
-          (
-          PS4=" $ "; set -x
-
-          mkdir -p /mnt/rootfs/proc
-          mount --move /proc /mnt/rootfs/proc
-          mkdir -p /mnt/rootfs/sys
-          mount --move /sys /mnt/rootfs/sys  
-          mkdir -p /mnt/rootfs/dev
-          mount --move /dev /mnt/rootfs/dev  
-          mkdir -p /mnt/rootfs/run
-          mount --move /run /mnt/rootfs/run  
-          )
-
           exec chroot /mnt/rootfs /init
         '' else ''
           exec switch_root /mnt/rootfs /init
@@ -186,6 +196,9 @@ in
         mkdir -p /mnt
         mount -t tmpfs tmpfs /mnt
 
+        mkdir -p /run
+        mount -t tmpfs tmpfs /run
+
         mkdir -p /tmp
         mount -t tmpfs tmpfs /tmp
 
@@ -198,8 +211,9 @@ in
         #!${extraUtils}/bin/sh
         PS4=" $ "; set -x
 
-        mkdir -p /mnt/SD
-        mount ${config.games-os.stub.userdataPartition} /mnt/SD
+        mkdir -p /run/gocfw/userdata
+        mount -o "${config.games-os.stub.userdataPartitionOptions}" \
+          ${config.games-os.stub.userdataPartition} /run/gocfw/userdata
       '';
 
       # TODO: consume data left by the rootfs chooser applet
@@ -208,7 +222,7 @@ in
         PS4=" $ "; set -x
 
         mkdir -p /mnt/rootfs
-        mount /mnt/SD/system/rootfs.img /mnt/rootfs
+        mount /run/gocfw/userdata/system/rootfs.img /mnt/rootfs
       '';
 
       /*
