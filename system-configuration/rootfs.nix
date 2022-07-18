@@ -13,38 +13,25 @@ in
 {
   options = {
     examples.hello-wip-games-os = {
-      # FIXME: use the upcoming submodule implementing the generic interface
-      rootfs = {
-        contents = mkOption {
-          type = types.attrsOf types.unspecified; # XXX too lazy to use the correct type
-          default = {};
-        };
+      rootfs = config.wip.cpio.lib.mkOption {
+        description = ''
+          Content of the current WIP final rootfs.
+        '';
       };
     };
   };
 
   config = {
-    # FIXME: provide similar semantics to the initramfs builder, but targeting
-    #        any arbitrary filesystem/archive (e.g. squashfs).
-    #        In other words, make a reusable submodule.
-    wip.stage-1.enable = lib.mkForce true;
-    # `xz` to hopefully cut ties with the whole closure.
-    wip.stage-1.compression = "xz";
-
-    wip.stage-1.contents = config.examples.hello-wip-games-os.rootfs.contents;
-
     build.TEMProotfs = (pkgs.celun.image-builder.evaluateFilesystemImage {
       config = {
         filesystem = "squashfs";
-        # Borrow the initramfs semantics to populate the rootfs
+        # Borrow the cpio semantics to populate the rootfs
         populateCommands = ''
-          xzcat ${config.wip.stage-1.output.initramfs} | "${pkgs.buildPackages.cpio}/bin/cpio" -idv
+          cat ${config.examples.hello-wip-games-os.rootfs.output} | "${pkgs.buildPackages.cpio}/bin/cpio" -idv
         '';
       };
     }).config.output;
 
-    # Co-opts the stage-1 infra to build a rootfs
-    # FIXME: (read other FIXME) provide generic submodule
     examples.hello-wip-games-os.rootfs.contents = {
       "/etc/issue" = pkgs.writeTextDir "/etc/issue" ''
 
@@ -126,14 +113,6 @@ in
       "/bin/sh" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-extraUtils-bin-sh" {} ''
         mkdir -p $out/bin
         ln -s ${extraUtils}/bin/sh $out/bin/sh
-      '';
-
-      # FHS compat
-      "lib/ld-linux" = pkgs.runCommandNoCC "hello-wip-games-os--initramfs-fhs-ld-linux" {} ''
-        mkdir -p $out/lib
-        for f in ${extraUtils}/lib/ld-linux*.so*; do
-          ln -s "$f" $out/lib/
-        done
       '';
 
       # Under some conditions, the rootfs is actually read-only and mountpoints
@@ -242,7 +221,7 @@ in
         mkdir -p /mnt/SDCARD
         # XXX: configurable device?
         # XXX: using mdev?
-        mount -t vfat -o iocharset=utf8,dirsync /dev/mmcblk0p1 /mnt/SDCARD
+        mount -t vfat -o iocharset=utf8,dirsync ${config.games-os.stub.userdataPartition} /mnt/SDCARD
       '')
     ];
 
