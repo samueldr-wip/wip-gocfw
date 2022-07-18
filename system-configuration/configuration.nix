@@ -39,6 +39,9 @@
       # Required
       POSIX_TIMERS = yes;
       FUTEX = yes;
+
+      # For the stub rootfs feature
+      BLK_DEV_LOOP = yes;
     };
     features = {
       printk = lib.mkDefault true;
