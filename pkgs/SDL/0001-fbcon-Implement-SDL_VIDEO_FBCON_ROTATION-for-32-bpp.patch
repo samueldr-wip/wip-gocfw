@@ -1,0 +1,104 @@
+From cbb9402b73021ca344086e8f4d3712070a1dce11 Mon Sep 17 00:00:00 2001
+From: Samuel Dionne-Riel <samuel@dionne-riel.com>
+Date: Mon, 15 Aug 2022 01:16:01 -0400
+Subject: [PATCH] fbcon: Implement SDL_VIDEO_FBCON_ROTATION for 32 bpp
+
+---
+ src/video/fbcon/SDL_fbvideo.c | 60 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 57 insertions(+), 3 deletions(-)
+
+diff --git a/src/video/fbcon/SDL_fbvideo.c b/src/video/fbcon/SDL_fbvideo.c
+index 5e588090..ae5a85cc 100644
+--- a/src/video/fbcon/SDL_fbvideo.c
++++ b/src/video/fbcon/SDL_fbvideo.c
+@@ -164,6 +164,8 @@ static void FB_RestorePalette(_THIS);
+ /* Shadow buffer functions */
+ static FB_bitBlit FB_blit16;
+ static FB_bitBlit FB_blit16blocked;
++static FB_bitBlit FB_blit32;
++static FB_bitBlit FB_blit32blocked;
+ 
+ static int SDL_getpagesize(void)
+ {
+@@ -1113,7 +1115,11 @@ static SDL_Surface *FB_SetVideoMode(_THIS, SDL_Surface *current,
+ 	FB_SavePalette(this, &finfo, &vinfo);
+ 
+ 	if (shadow_fb) {
+-		if (vinfo.bits_per_pixel == 16) {
++		if (vinfo.bits_per_pixel == 32) {
++			blitFunc = (rotate == FBCON_ROTATE_NONE ||
++					rotate == FBCON_ROTATE_UD) ?
++				FB_blit32 : FB_blit32blocked;
++		} else if (vinfo.bits_per_pixel == 16) {
+ 			blitFunc = (rotate == FBCON_ROTATE_NONE ||
+ 					rotate == FBCON_ROTATE_UD) ?
+ 				FB_blit16 : FB_blit16blocked;
+@@ -1493,6 +1499,54 @@ static void FB_blit16blocked(Uint8 *byte_src_pos, int src_right_delta, int src_d
+ 	}
+ }
+ 
++static void FB_blit32(Uint8 *byte_src_pos, int src_right_delta, int src_down_delta,
++		Uint8 *byte_dst_pos, int dst_linebytes, int width, int height)
++{
++	int w;
++	Uint32 *src_pos = (Uint32 *)byte_src_pos;
++	Uint32 *dst_pos = (Uint32 *)byte_dst_pos;
++
++	while (height) {
++		Uint32 *src = src_pos;
++		Uint32 *dst = dst_pos;
++		for (w = width; w != 0; w--) {
++			*dst = *src;
++			src += src_right_delta;
++			dst++;
++		}
++		dst_pos = (Uint32 *)((Uint8 *)dst_pos + dst_linebytes);
++		src_pos += src_down_delta;
++		height--;
++	}
++}
++
++static void FB_blit32blocked(Uint8 *byte_src_pos, int src_right_delta, int src_down_delta, 
++		Uint8 *byte_dst_pos, int dst_linebytes, int width, int height)
++{
++	int w;
++	Uint32 *src_pos = (Uint32 *)byte_src_pos;
++	Uint32 *dst_pos = (Uint32 *)byte_dst_pos;
++
++	while (height > 0) {
++		Uint32 *src = src_pos;
++		Uint32 *dst = dst_pos;
++		for (w = width; w > 0; w -= BLOCKSIZE_W) {
++			FB_blit32((Uint8 *)src,
++					src_right_delta,
++					src_down_delta,
++					(Uint8 *)dst,
++					dst_linebytes,
++					min(w, BLOCKSIZE_W),
++					min(height, BLOCKSIZE_H));
++			src += src_right_delta * BLOCKSIZE_W;
++			dst += BLOCKSIZE_W;
++		}
++		dst_pos = (Uint32 *)((Uint8 *)dst_pos + dst_linebytes * BLOCKSIZE_H);
++		src_pos += src_down_delta * BLOCKSIZE_H;
++		height -= BLOCKSIZE_H;
++	}
++}
++
+ static void FB_DirectUpdate(_THIS, int numrects, SDL_Rect *rects)
+ {
+ 	int width = cache_vinfo.xres;
+@@ -1505,8 +1559,8 @@ static void FB_DirectUpdate(_THIS, int numrects, SDL_Rect *rects)
+ 		return;
+ 	}
+ 
+-	if (cache_vinfo.bits_per_pixel != 16) {
+-		SDL_SetError("Shadow copy only implemented for 16 bpp");
++	if (cache_vinfo.bits_per_pixel != 16 && cache_vinfo.bits_per_pixel != 32) {
++		SDL_SetError("Shadow copy only implemented for 16 and 32 bpp");
+ 		return;
+ 	}
+ 
+-- 
+2.35.1
+

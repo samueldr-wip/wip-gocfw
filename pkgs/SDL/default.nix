@@ -1,6 +1,6 @@
 { SDL }:
 
-(SDL.overrideAttrs({ configureFlags, ... }: {
+(SDL.overrideAttrs({ configureFlags, patches ? [], ... }: {
   # Ensures nothing unneeded is built
   configureFlags = [
     "--enable-cdrom=no"
@@ -25,6 +25,10 @@
     "--enable-video-picogui=no"
     #"--enable-video-dummy=no"
     "--enable-video-opengl=no"
+  ];
+
+  patches = patches ++ [
+    ./0001-fbcon-Implement-SDL_VIDEO_FBCON_ROTATION-for-32-bpp.patch
   ];
 }))
 .override {
