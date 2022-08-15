@@ -209,6 +209,19 @@ in
 
       "/etc/init.d/20-sd-mount" = writeScriptDir "/etc/init.d/20-sd-mount" ''
         #!${extraUtils}/bin/sh
+
+        if ! [ -e ${config.games-os.stub.userdataPartition} ]; then
+          echo ":: ERROR: target '${config.games-os.stub.userdataPartition}' partition does not exist."
+          echo "   Candidates:"
+          for f in /dev/*; do
+            test -b "$f" && printf '    - %s\n' "$f"
+          done
+          echo 1 > /proc/sys/kernel/sysrq
+          echo c > /proc/sysrq-trigger
+          sleep 5
+          exit 1
+        fi
+
         PS4=" $ "; set -x
 
         mkdir -p /run/gocfw/userdata
