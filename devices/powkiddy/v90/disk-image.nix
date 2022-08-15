@@ -76,7 +76,7 @@ in
           })
 
           {
-            name = "boot-partition";
+            name = "userdata";
             partitionLabel = "userdata";
             partitionType = "8DA63339-0007-60C0-C436-083AC8230908";
             bootable = true;
