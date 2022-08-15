@@ -14,7 +14,7 @@ in
 
   # Target device uses initramfs.
   wip.stage-1.enable = true;
-  wip.stage-1.output.initramfs = config.games-os.stub.filesystem.output;
+  wip.stage-1.cpio = config.games-os.stub.filesystem.output;
 
   device.config.qemu = {
     memorySize = 32;
