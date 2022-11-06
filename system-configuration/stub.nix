@@ -216,9 +216,10 @@ in
           for f in /dev/*; do
             test -b "$f" && printf '    - %s\n' "$f"
           done
+          echo "... about to abort!"
+          sleep 10
           echo 1 > /proc/sys/kernel/sysrq
           echo c > /proc/sysrq-trigger
-          sleep 5
           exit 1
         fi
 
