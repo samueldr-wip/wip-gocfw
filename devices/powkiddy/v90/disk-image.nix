@@ -70,7 +70,7 @@ in
             name = "firmware";
             partitionLabel = "$FIRMWARE";
             partitionType = "67401509-72E7-4628-B1AF-EDD128E4316A";
-            offset = 16 * 512 /* sectors */; # 8MiB from the start of the disk
+            offset = 16 * 512 /* sectors */; # 8KiB from the start of the disk
             length = helpers.size.MiB 4;
             raw = cfg.firmwarePartition;
           })
