@@ -210,18 +210,25 @@ in
       "/etc/init.d/20-sd-mount" = writeScriptDir "/etc/init.d/20-sd-mount" ''
         #!${extraUtils}/bin/sh
 
-        if ! [ -e ${config.games-os.stub.userdataPartition} ]; then
-          echo ":: ERROR: target '${config.games-os.stub.userdataPartition}' partition does not exist."
-          echo "   Candidates:"
-          for f in /dev/*; do
-            test -b "$f" && printf '    - %s\n' "$f"
-          done
-          echo "... about to abort!"
-          sleep 10
-          echo 1 > /proc/sys/kernel/sysrq
-          echo c > /proc/sysrq-trigger
-          exit 1
-        fi
+        count=600
+        echo "Waiting for device '${config.games-os.stub.userdataPartition}' to show-up..."
+        until [ -e ${config.games-os.stub.userdataPartition} ]; do
+          echo -n "."
+          sleep 0.1
+          count=$(( count - 1 ))
+          if [[ $count -eq 0 ]]; then
+            echo ":: ERROR: target '${config.games-os.stub.userdataPartition}' partition never showed up."
+            echo "   Candidates:"
+            for f in /dev/*; do
+              test -b "$f" && printf '    - %s\n' "$f"
+            done
+            echo "... about to abort!"
+            sleep 10
+            echo 1 > /proc/sys/kernel/sysrq
+            echo c > /proc/sysrq-trigger
+            exit 1
+          fi
+        done
 
         PS4=" $ "; set -x
 
