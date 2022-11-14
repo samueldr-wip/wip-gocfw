@@ -16,8 +16,6 @@ let
     setenv fdt_addr_r     "0x01f00000"
     setenv kernel_addr_r  "0x02008000"
 
-    setenv dtb_name "rk3326-rg351p-linux.dtb"
-
     setenv bootargs "${lib.concatStringsSep " " config.boot.cmdline}"
 
     gpio toggle a15
