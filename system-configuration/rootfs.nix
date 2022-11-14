@@ -129,19 +129,6 @@ in
           (cd $out/bin/; ln -s busybox linuxrc)
         '';
       }
-      { package = pkgs.luajit; }
-      {
-        package = pkgs.SDL;
-        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL}/lib/*.so*'';
-      }
-      {
-        package = pkgs.SDL_ttf;
-        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL_ttf}/lib/*.so*'';
-      }
-      {
-        package = pkgs.SDL_image;
-        extraCommand = ''cp -fr -t $out/lib/ ${pkgs.SDL_image}/lib/*.so*'';
-      }
       {
         package = pkgs.games-os.hello;
         extraCommand = ''
@@ -149,15 +136,15 @@ in
           cp -fr -t $out/share/ ${pkgs.games-os.hello}/share/*
           (
           cd $out/bin
-          chmod -R +w .
+          chmod +w .
+          mv hello hello.orig
           cat <<EOF > hello
           #!/bin/sh
-          export APP_PATH
-          APP_PATH="$out/share/games-os-hello/"
           export SDL_NOMOUSE
           SDL_NOMOUSE=1 # XXX
-          $out/bin/luajit "\$APP_PATH/hello.lua" "\$@"
+          $out/bin/hello.orig
           EOF
+          chmod +x hello
           )
         '';
       }
