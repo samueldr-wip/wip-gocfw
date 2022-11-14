@@ -235,15 +235,37 @@ in
         mkdir -p /run/gocfw/userdata
         mount -o "${config.games-os.stub.userdataPartitionOptions}" \
           ${config.games-os.stub.userdataPartition} /run/gocfw/userdata
+
+        if ! [ $? -eq 0 ]; then
+          echo ":: ERROR: couldn't mount filesystem for userdata..."
+          echo "Partition: '${config.games-os.stub.userdataPartition}'"
+
+          echo "... about to abort!"
+          sleep 10
+          echo 1 > /proc/sys/kernel/sysrq
+          echo c > /proc/sysrq-trigger
+          exit 1
+        fi
       '';
 
       # TODO: consume data left by the rootfs chooser applet
       "/etc/init.d/25-rootfs-mount" = writeScriptDir "/etc/init.d/25-rootfs-mount" ''
         #!${extraUtils}/bin/sh
-        PS4=" $ "; set -x
+        PS4=" $ "
 
+        rootfs=/run/gocfw/userdata/system/rootfs.img
         mkdir -p /mnt/rootfs
-        mount /run/gocfw/userdata/system/rootfs.img /mnt/rootfs
+        if [ ! -e "$rootfs" ]; then
+          echo ":: ERROR: rootfs image '$rootfs' not found..."
+          echo "... about to abort!"
+          sleep 10
+          echo 1 > /proc/sys/kernel/sysrq
+          echo c > /proc/sysrq-trigger
+          exit 1
+        fi
+
+        set -x
+        mount "$rootfs" /mnt/rootfs
       '';
 
       /*
