@@ -26,7 +26,6 @@ let
     mkExtraUtils
 
     busybox
-    ply-image
     glibc
   ;
 

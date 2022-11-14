@@ -129,13 +129,6 @@ in
           (cd $out/bin/; ln -s busybox linuxrc)
         '';
       }
-      {
-        package = pkgs.ply-image;
-        extraCommand = ''
-          cp -f ${pkgs.glibc.out}/lib/libpthread.so.0 $out/lib/
-        '';
-      }
-
       { package = pkgs.luajit; }
       {
         package = pkgs.SDL;
