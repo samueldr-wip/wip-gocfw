@@ -33,6 +33,11 @@ let
       ];
 
       buildPhase = ''
+        for f in scripts/dtc/dtc-lexer.l scripts/dtc/dtc-lexer.lex.c_shipped; do
+          substituteInPlace "$f" --replace \
+            "YYLTYPE yylloc;" "extern YYLTYPE yylloc;"
+        done
+
         # Wrapper around make for readability
         _make() {
           (set -x
