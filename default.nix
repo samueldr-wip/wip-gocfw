@@ -3,7 +3,7 @@
 }:
 
 if device == null
-then builtins.throw "Please provide a device with `--arg device name`"
+then builtins.throw "Please provide a device with `--argstr device name`"
 else
 
 let
