@@ -21,6 +21,11 @@ SDL.overrideAttrs({ buildInputs, configureFlags, ... }: {
     # XXX "--enable-miao"
     "--disable-miao"
   ];
+  NIX_CFLAGS_COMPILE = [
+    # meh
+    "-Wno-error=incompatible-pointer-types"
+    "-Wno-error=unused-result"
+  ];
   # By providing these LDFLAGS here, they are propagated by sdl-config.
   # https://github.com/shauninman/SDL-1.2/blob/608ebfc1ffbd9d8644dea5e51345cbe978d969b1/config.sh#L7
   LDFLAGS = [
