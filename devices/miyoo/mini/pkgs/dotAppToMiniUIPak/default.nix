@@ -115,6 +115,9 @@ let
     app="$name.app"
     mountpoint="/var/dot-app/$app"
 
+    printf ":: $app launch at: "
+    date +%H:%M:%S.%3N
+
     blank
     _say "Preparing $app..."
 
@@ -129,6 +132,8 @@ let
 
     blank
     _say "Launching $app..."
+    printf "   at: "
+    date +%H:%M:%S.%3N
 
     # Launch with a neutered environment.
     # It's assumed we don't want any of the vendor things leaking in.
@@ -136,6 +141,8 @@ let
 
     blank
     _say "Cleaning-up $app..."
+    printf "   at: "
+    date +%H:%M:%S.%3N
 
     # Cleanup after execution
     # NOTE: there is no handling for any child processes.
@@ -144,6 +151,9 @@ let
     done
     umount -df "$mountpoint"
     rmdir --ignore-fail-on-non-empty -p "$mountpoint"
+
+    printf ":: Finished at: "
+    date +%H:%M:%S.%3N
   '';
 in
 runCommandNoCC "${app.name}-pak" {
