@@ -3,6 +3,7 @@
 , callPackage
 , runCommandNoCC
 , writeScript
+, writeText
 , debug ? false
 }:
 
@@ -155,6 +156,10 @@ let
     printf ":: Finished at: "
     date +%H:%M:%S.%3N
   '';
+
+  m3u = writeText "launch.m3u" ''
+    launch.sh
+  '';
 in
 runCommandNoCC "${app.name}-pak" {
   inherit app;
@@ -166,4 +171,5 @@ runCommandNoCC "${app.name}-pak" {
   cp -v "$app/$name.app" "$dir"
   cp -v "${loop_ko}"/lib/modules/*/extra/loop.ko "$dir"
   cp -v "${launcher}" "$dir"/launch.sh
+  cp -v "${m3u}" "$dir/$name.pak.m3u"
 ''
