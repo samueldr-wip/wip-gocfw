@@ -19,6 +19,8 @@
 let
   runner = writeScript "${name}-runner" ''
     #!${busybox}/bin/sh
+    printf ":: ${name} launching at: "
+    ${busybox}/bin/busybox date +%H:%M:%S.%3N
     exec "${entrypoint}" "$@"
   '';
 in
