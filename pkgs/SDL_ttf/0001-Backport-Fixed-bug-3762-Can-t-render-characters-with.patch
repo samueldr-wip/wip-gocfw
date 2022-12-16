@@ -1,0 +1,342 @@
+From 63038a8f3a9b742089028714ff2f54563294aac7 Mon Sep 17 00:00:00 2001
+From: Samuel Dionne-Riel <samuel@dionne-riel.com>
+Date: Thu, 7 Jul 2022 15:33:57 -0400
+Subject: [PATCH] Backport: Fixed bug 3762 - Can't render characters with
+ codepoints greater than 2^16
+
+From: 4c6667ef4f7ea8183d7d952ca8ed7e456ff331f4
+Co-authored-by: Sam Lantinga <slouken@libsdl.org>
+---
+ SDL_ttf.c | 112 +++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 65 insertions(+), 47 deletions(-)
+
+diff --git a/SDL_ttf.c b/SDL_ttf.c
+index 3f75456..8ff1f97 100644
+--- a/SDL_ttf.c
++++ b/SDL_ttf.c
+@@ -91,7 +91,7 @@ typedef struct cached_glyph {
+ 	int maxy;
+ 	int yoffset;
+ 	int advance;
+-	Uint16 cached;
++	Uint32 cached;
+ } c_glyph;
+ 
+ /* The structure used to hold internal font information */
+@@ -153,7 +153,7 @@ static FT_Library library;
+ static int TTF_initialized = 0;
+ static int TTF_byteswapped = 0;
+ 
+-static int TTF_SizeUNICODE_Internal(TTF_Font *font, const Uint16 *text,
++static int TTF_SizeUNICODE_Internal(TTF_Font *font, const Uint32 *text,
+ 				    int *w, int *h, int *xstart, int *ystart);
+ 
+ /* Gets the top row of the underline. The outline
+@@ -464,16 +464,34 @@ TTF_Font* TTF_OpenFontIndexDPIRW( SDL_RWops *src, int freesrc, int ptsize, long
+ 
+ 	/* Set charmap for loaded font */
+ 	found = 0;
++#if 0 /* Font debug code */
+ 	for (i = 0; i < face->num_charmaps; i++) {
+ 		FT_CharMap charmap = face->charmaps[i];
+-		if ((charmap->platform_id == 3 && charmap->encoding_id == 1) /* Windows Unicode */
+-		 || (charmap->platform_id == 3 && charmap->encoding_id == 0) /* Windows Symbol */
+-		 || (charmap->platform_id == 2 && charmap->encoding_id == 1) /* ISO Unicode */
+-		 || (charmap->platform_id == 0)) { /* Apple Unicode */
+-			found = charmap;
+-			break;
++		printf("Found charmap: platform id %d, encoding id %d\n", charmap->platform_id, charmap->encoding_id);
++	}
++#endif
++	if (!found) {
++		for (i = 0; i < face->num_charmaps; i++) {
++			FT_CharMap charmap = face->charmaps[i];
++			if (charmap->platform_id == 3 && charmap->encoding_id == 10) { /* UCS-4 Unicode */
++				found = charmap;
++				break;
++			}
+ 		}
+ 	}
++	if (!found) {
++		for (i = 0; i < face->num_charmaps; i++) {
++			FT_CharMap charmap = face->charmaps[i];
++			if ((charmap->platform_id == 3 && charmap->encoding_id == 1) /* Windows Unicode */
++					|| (charmap->platform_id == 3 && charmap->encoding_id == 0) /* Windows Symbol */
++					|| (charmap->platform_id == 2 && charmap->encoding_id == 1) /* ISO Unicode */
++					|| (charmap->platform_id == 0)) { /* Apple Unicode */
++				found = charmap;
++				break;
++			}
++		}
++	}
++
+ 	if ( found ) {
+ 		/* If this fails, continue using the default charmap */
+ 		FT_Set_Charmap(face, found);
+@@ -627,7 +645,7 @@ static void Flush_Cache( TTF_Font* font )
+ 	}
+ }
+ 
+-static FT_Error Load_Glyph( TTF_Font* font, Uint16 ch, c_glyph* cached, int want )
++static FT_Error Load_Glyph( TTF_Font* font, Uint32 ch, c_glyph* cached, int want )
+ {
+ 	FT_Face face;
+ 	FT_Error error;
+@@ -941,7 +959,7 @@ static FT_Error Load_Glyph( TTF_Font* font, Uint16 ch, c_glyph* cached, int want
+ 	return 0;
+ }
+ 
+-static FT_Error Find_Glyph( TTF_Font* font, Uint16 ch, int want )
++static FT_Error Find_Glyph( TTF_Font* font, Uint32 ch, int want )
+ {
+ 	int retval = 0;
+ 	int hsize = sizeof( font->cache ) / sizeof( font->cache[0] );
+@@ -975,7 +993,7 @@ void TTF_CloseFont( TTF_Font* font )
+ 	}
+ }
+ 
+-static Uint16 *LATIN1_to_UNICODE(Uint16 *unicode, const char *text, int len)
++static Uint32 *LATIN1_to_UNICODE(Uint32 *unicode, const char *text, int len)
+ {
+ 	int i;
+ 
+@@ -987,27 +1005,27 @@ static Uint16 *LATIN1_to_UNICODE(Uint16 *unicode, const char *text, int len)
+ 	return unicode;
+ }
+ 
+-static Uint16 *UTF8_to_UNICODE(Uint16 *unicode, const char *utf8, int len)
++static Uint32 *UTF8_to_UNICODE(Uint32 *unicode, const char *utf8, int len)
+ {
+ 	int i, j;
+-	Uint16 ch;
++	Uint32 ch;
+ 
+ 	for ( i=0, j=0; i < len; ++i, ++j ) {
+ 		ch = ((const unsigned char *)utf8)[i];
+ 		if ( ch >= 0xF0 ) {
+-			ch  =  (Uint16)(utf8[i]&0x07) << 18;
+-			ch |=  (Uint16)(utf8[++i]&0x3F) << 12;
+-			ch |=  (Uint16)(utf8[++i]&0x3F) << 6;
+-			ch |=  (Uint16)(utf8[++i]&0x3F);
++			ch  =  (Uint32)(utf8[i]&0x07) << 18;
++			ch |=  (Uint32)(utf8[++i]&0x3F) << 12;
++			ch |=  (Uint32)(utf8[++i]&0x3F) << 6;
++			ch |=  (Uint32)(utf8[++i]&0x3F);
+ 		} else
+ 		if ( ch >= 0xE0 ) {
+-			ch  =  (Uint16)(utf8[i]&0x0F) << 12;
+-			ch |=  (Uint16)(utf8[++i]&0x3F) << 6;
+-			ch |=  (Uint16)(utf8[++i]&0x3F);
++			ch  =  (Uint32)(utf8[i]&0x0F) << 12;
++			ch |=  (Uint32)(utf8[++i]&0x3F) << 6;
++			ch |=  (Uint32)(utf8[++i]&0x3F);
+ 		} else
+ 		if ( ch >= 0xC0 ) {
+-			ch  =  (Uint16)(utf8[i]&0x1F) << 6;
+-			ch |=  (Uint16)(utf8[++i]&0x3F);
++			ch  =  (Uint32)(utf8[i]&0x1F) << 6;
++			ch |=  (Uint32)(utf8[++i]&0x3F);
+ 		}
+ 		unicode[j] = ch;
+ 	}
+@@ -1108,13 +1126,13 @@ int TTF_GlyphMetrics(TTF_Font *font, Uint16 ch,
+ 
+ int TTF_SizeText(TTF_Font *font, const char *text, int *w, int *h)
+ {
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 	int status;
+ 
+ 	/* Copy the Latin-1 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return -1;
+@@ -1132,13 +1150,13 @@ int TTF_SizeText(TTF_Font *font, const char *text, int *w, int *h)
+ 
+ int TTF_SizeUTF8(TTF_Font *font, const char *text, int *w, int *h)
+ {
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 	int status;
+ 
+ 	/* Copy the UTF-8 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return -1;
+@@ -1159,10 +1177,10 @@ int TTF_SizeUNICODE(TTF_Font *font, const Uint16 *text, int *w, int *h)
+ 	return TTF_SizeUNICODE_Internal(font, text, w, h, NULL, NULL);
+ }
+ 
+-static int TTF_SizeUNICODE_Internal(TTF_Font *font, const Uint16 *text, int *w, int *h, int *xstart, int *ystart)
++static int TTF_SizeUNICODE_Internal(TTF_Font *font, const Uint32 *text, int *w, int *h, int *xstart, int *ystart)
+ {
+ 	int status;
+-	const Uint16 *ch;
++	const Uint32 *ch;
+ 	int swapped;
+ 	int x, z;
+ 	int minx, maxx;
+@@ -1197,7 +1215,7 @@ static int TTF_SizeUNICODE_Internal(TTF_Font *font, const Uint16 *text, int *w,
+ 	/* Load each character and sum it's bounding box */
+ 	x= 0;
+ 	for ( ch=text; *ch; ++ch ) {
+-		Uint16 c = *ch;
++		Uint32 c = *ch;
+ 		if ( c == UNICODE_BOM_NATIVE ) {
+ 			swapped = 0;
+ 			if ( text == ch ) {
+@@ -1319,12 +1337,12 @@ SDL_Surface *TTF_RenderText_Solid(TTF_Font *font,
+ 				const char *text, SDL_Color fg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the Latin-1 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1346,12 +1364,12 @@ SDL_Surface *TTF_RenderUTF8_Solid(TTF_Font *font,
+ 				const char *text, SDL_Color fg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the UTF-8 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1375,7 +1393,7 @@ SDL_Surface *TTF_RenderUNICODE_Solid(TTF_Font *font,
+ 	int height;
+ 	SDL_Surface* textbuf;
+ 	SDL_Palette* palette;
+-	const Uint16* ch;
++	const Uint32* ch;
+ 	Uint8* src;
+ 	Uint8* dst;
+ 	Uint8 *dst_check;
+@@ -1420,7 +1438,7 @@ SDL_Surface *TTF_RenderUNICODE_Solid(TTF_Font *font,
+ 	/* Load and render each character */
+ 	swapped = TTF_byteswapped;
+ 	for( ch=text; *ch; ++ch ) {
+-		Uint16 c = *ch;
++		Uint32 c = *ch;
+ 		if ( c == UNICODE_BOM_NATIVE ) {
+ 			swapped = 0;
+ 			if ( text == ch ) {
+@@ -1567,12 +1585,12 @@ SDL_Surface *TTF_RenderText_Shaded(TTF_Font *font,
+ 				const char *text, SDL_Color fg, SDL_Color bg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the Latin-1 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1594,12 +1612,12 @@ SDL_Surface *TTF_RenderUTF8_Shaded(TTF_Font *font,
+ 				const char *text, SDL_Color fg, SDL_Color bg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the UTF-8 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1629,7 +1647,7 @@ SDL_Surface* TTF_RenderUNICODE_Shaded( TTF_Font* font,
+ 	int rdiff;
+ 	int gdiff;
+ 	int bdiff;
+-	const Uint16* ch;
++	const Uint32* ch;
+ 	Uint8* src;
+ 	Uint8* dst;
+ 	Uint8* dst_check;
+@@ -1675,7 +1693,7 @@ SDL_Surface* TTF_RenderUNICODE_Shaded( TTF_Font* font,
+ 	/* Load and render each character */
+ 	swapped = TTF_byteswapped;
+ 	for( ch = text; *ch; ++ch ) {
+-		Uint16 c = *ch;
++		Uint32 c = *ch;
+ 		if ( c == UNICODE_BOM_NATIVE ) {
+ 			swapped = 0;
+ 			if ( text == ch ) {
+@@ -1829,12 +1847,12 @@ SDL_Surface *TTF_RenderText_Blended(TTF_Font *font,
+ 				const char *text, SDL_Color fg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the Latin-1 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1856,12 +1874,12 @@ SDL_Surface *TTF_RenderUTF8_Blended(TTF_Font *font,
+ 				const char *text, SDL_Color fg)
+ {
+ 	SDL_Surface *textbuf;
+-	Uint16 *unicode_text;
++	Uint32 *unicode_text;
+ 	int unicode_len;
+ 
+ 	/* Copy the UTF-8 text to a UNICODE text buffer */
+ 	unicode_len = strlen(text);
+-	unicode_text = (Uint16 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
++	unicode_text = (Uint32 *)ALLOCA((1+unicode_len+1)*(sizeof *unicode_text));
+ 	if ( unicode_text == NULL ) {
+ 		TTF_SetError("Out of memory");
+ 		return(NULL);
+@@ -1885,7 +1903,7 @@ SDL_Surface *TTF_RenderUNICODE_Blended(TTF_Font *font,
+ 	SDL_Surface *textbuf;
+ 	Uint32 alpha;
+ 	Uint32 pixel;
+-	const Uint16 *ch;
++	const Uint32 *ch;
+ 	Uint8 *src;
+ 	Uint32 *dst;
+ 	Uint32 *dst_check;
+@@ -1922,7 +1940,7 @@ SDL_Surface *TTF_RenderUNICODE_Blended(TTF_Font *font,
+ 	SDL_FillRect(textbuf, NULL, pixel);	/* Initialize with fg and 0 alpha */
+ 
+ 	for ( ch=text; *ch; ++ch ) {
+-		Uint16 c = *ch;
++		Uint32 c = *ch;
+ 		if ( c == UNICODE_BOM_NATIVE ) {
+ 			swapped = 0;
+ 			if ( text == ch ) {
+-- 
+2.35.1
+
