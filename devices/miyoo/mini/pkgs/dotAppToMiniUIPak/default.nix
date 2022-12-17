@@ -127,7 +127,7 @@ let
 
     mkdir -p "$mountpoint"
     mount -t squashfs -o loop "$containing_dir/$app" "$mountpoint"
-    for d in dev proc sys mnt tmp var; do
+    for d in dev proc sys tmp var mnt mnt/SDCARD; do
       mount -o bind "/$d" "$mountpoint/$d"
     done
 
@@ -138,7 +138,7 @@ let
 
     # Launch with a neutered environment.
     # It's assumed we don't want any of the vendor things leaking in.
-    env -i $(which chroot) "$mountpoint" /.entrypoint "$@"
+    env -i "HOME=$HOME" $(which chroot) "$mountpoint" /.entrypoint "$@"
 
     blank
     _say "Cleaning-up $app..."
@@ -147,7 +147,7 @@ let
 
     # Cleanup after execution
     # NOTE: there is no handling for any child processes.
-    for d in dev proc sys mnt tmp var; do
+    for d in dev proc sys tmp var mnt/SDCARD mnt; do
       umount -f "$mountpoint/$d"
     done
     umount -df "$mountpoint"
