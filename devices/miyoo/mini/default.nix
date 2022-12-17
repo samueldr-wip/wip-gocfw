@@ -74,6 +74,27 @@
       miyooMiniAdditionalKernelModules = self.callPackage ./pkgs/miyooMiniAdditionalKernelModules { };
       games-os = super.games-os // {
         dotAppToMiniUIPak = self.callPackage ./pkgs/dotAppToMiniUIPak { };
+        dingux-commander = self.callPackage ./pkgs/dingux-commander { };
+        dingux-commander-app = self.callPackage (
+          { dingux-commander, games-os }:
+          games-os.mkDotApp {
+            name = "dingux-commander";
+            entrypoint = "${dingux-commander}/bin/dingux-commander";
+            paths = [
+              dingux-commander
+            ];
+          }
+        ) {
+          inherit (self.games-os) dingux-commander;
+        };
+        dingux-commander-pak = self.callPackage (
+          { dingux-commander-app, games-os }:
+          games-os.dotAppToMiniUIPak {
+            app = dingux-commander-app;
+          }
+        ) {
+          dingux-commander-app = self.games-os.dingux-commander-app;
+        };
       };
     })
   ];
