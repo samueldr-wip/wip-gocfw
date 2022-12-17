@@ -21,6 +21,11 @@ let
     #!${busybox}/bin/sh
     printf ":: ${name} launching at: "
     ${busybox}/bin/busybox date +%H:%M:%S.%3N
+
+    # Provide a minimally sufficient environment
+    # This helps the actual entrypoint which should provide any additional environment.
+    export PATH="${busybox}/bin"
+
     exec "${entrypoint}" "$@"
   '';
 in
