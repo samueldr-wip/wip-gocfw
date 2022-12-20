@@ -138,7 +138,7 @@ let
 
     # Launch with a neutered environment.
     # It's assumed we don't want any of the vendor things leaking in.
-    env -i "HOME=$HOME" $(which chroot) "$mountpoint" /.entrypoint "$@"
+    env -i "HOME=$USERDATA_PATH" $(which chroot) "$mountpoint" /.entrypoint "$@"
 
     blank
     _say "Cleaning-up $app..."
