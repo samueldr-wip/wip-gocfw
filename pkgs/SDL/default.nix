@@ -27,6 +27,14 @@
     "--enable-video-opengl=no"
   ];
 
+  NIX_CFLAGS_COMPILE = [
+    #"-DFBCON_DEBUG"
+    "-Wall"
+    "-Werror"
+    "-Wno-error=unused-function"
+    "-Wno-error=unused-but-set-variable"
+  ];
+
   patches = patches ++ [
     ./0001-fbcon-Implement-SDL_VIDEO_FBCON_ROTATION-for-32-bpp.patch
   ];
