@@ -73,5 +73,12 @@ in
       #       and having `boot.ini` at the root is fine too...
       games-os.stub.userdataPartition = "/dev/mmcblk0p1";
     }
+    {
+      nixpkgs.overlays = [
+        (final: super: {
+          librga = final.callPackage ./pkgs/librga { };
+        })
+      ];
+    }
   ];
 }
