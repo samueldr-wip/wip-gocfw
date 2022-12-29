@@ -7,7 +7,11 @@ then builtins.throw "Please provide a device with `--argstr device name`"
 else
 
 let
-  device' = ./. + "/devices/${device}";
+  device' =
+    if builtins.isPath device
+    then device
+    else ./. + "/devices/${device}"
+  ;
 in
 
 import (celun + /lib/eval-with-configuration.nix) {
