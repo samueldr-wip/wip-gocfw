@@ -47,7 +47,8 @@ in
                 # v1.0 additionally has a ITE66121 chip.
                 #  - https://github.com/OpenDingux/linux/commit/8003086698456b3ec60496c912727b770939abce
                 # So my interpretation is that since it's a superset, it's safe to target v1.1 only.
-                cat ${kernel}/dtbs/ingenic/rg280m-v1.1.dtb >> uzImage.bin
+                #cat ${kernel}/dtbs/ingenic/rg280m-v1.1.dtb >> uzImage.bin
+                cat ${kernel}/dtbs/ingenic/rg280m.dtb >> uzImage.bin
 
                 echo ":: Copying stage-1"
                 cp ${initramfs} initramfs.img

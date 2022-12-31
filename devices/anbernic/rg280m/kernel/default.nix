@@ -4,7 +4,7 @@
 
 # Cheating here :/
 stdenv.mkDerivation {
-  version = "6.1.0";
+  version = "5.15.0-rc6";
   src = builtins.fetchGit /Users/samuel/tmp/linux/opendingux;
   #src = fetchFromGitHub {
   #  owner = "OpenDingux";
@@ -17,6 +17,7 @@ stdenv.mkDerivation {
     (
       cd $buildRoot
       cp -v -t $out/ arch/mips/boot/uzImage.bin
+      cp -v -t $out/dtbs/ingenic arch/mips/boot/dts/ingenic/*.dtb
     )
   '';
 }

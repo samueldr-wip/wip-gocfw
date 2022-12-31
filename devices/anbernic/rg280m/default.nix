@@ -47,14 +47,15 @@ in
 
       wip.kernel.package = pkgs.callPackage ./kernel { };
       wip.kernel.defconfig = pkgs.fetchurl {
-        url = "https://github.com/OpenDingux/buildroot/raw/4d23381101e15cd53d9e1cb37e2a488d99d5b6e1/board/opendingux/gcw0/linux_defconfig";
-        sha256 = "sha256-bnfrNtp/dteDnRUBcjOUt+o34g+HGDy805qB16rDr6Q=";
+        url = "https://github.com/OpenDingux/buildroot/raw/d6304599c47519d3492bc2d5a3bef7d2e80f8501/board/opendingux/gcw0/linux_defconfig";
+        sha256 = "sha256-KPOlQPmqhMebF2kzwrceDVmQDawoM5Ce8vhsrlSAIWg=";
       };
       wip.kernel.installTargets = [
         "dtbs"
         "dtbs_install"
         "INSTALL_DTBS_PATH=$(out)/dtbs"
         "uzImage.bin"
+        "ingenic/rg280m.dtb"
       ];
 
       wip.kernel.isModular = true;
