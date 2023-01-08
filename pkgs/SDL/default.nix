@@ -1,6 +1,47 @@
-{ SDL }:
+{ stdenv
+, SDL
 
-(SDL.overrideAttrs({ configureFlags, patches ? [], ... }: {
+# For DRM/KMS
+, libdrm
+, udev
+, pkg-config
+
+# To refresh the configure script
+, autoconf
+}:
+
+(SDL.overrideAttrs(
+  { configureFlags
+  , patches ? []
+  , buildInputs ? []
+  , nativeBuildInputs ? []
+  , ... }: {
+
+  buildInputs = buildInputs ++ [
+    libdrm
+    udev
+  ];
+
+  PKG_CONFIG = "${stdenv.cc.targetPrefix}pkg-config";
+
+  nativeBuildInputs = nativeBuildInputs ++ [
+    pkg-config
+    autoconf
+  ];
+
+  # Downstream SDL may ship with an outdated configure script.
+  # Remove it so it's not used.
+  prePatch = ''
+    substituteInPlace configure.ac \
+      --replace pkg-config "$PKG_CONFIG"
+    rm configure
+  '';
+
+  # Not using the autoreconf hook, it doesn't play well with this old setup.
+  preConfigure = ''
+    sh autogen.sh
+  '';
+
   # Ensures nothing unneeded is built
   configureFlags = [
     "--enable-cdrom=no"
@@ -23,8 +64,15 @@
     "--enable-video-caca=no"
     "--enable-video-qtopia=no"
     "--enable-video-picogui=no"
-    #"--enable-video-dummy=no"
     "--enable-video-opengl=no"
+
+    # NOTE: video driver is also the input driver...
+    #       the kmsdrm driver wants to use udev for input, which isn't necessarily initialized.
+    "--enable-video-dummy=yes"
+    "--enable-video-fbcon=yes"
+    # XXX opendingux / rg280
+    "--enable-video-kmsdrm=yes"
+    #"--enable-video-kmsdrm=no"
   ];
 
   NIX_CFLAGS_COMPILE = [
@@ -35,9 +83,12 @@
     "-Wno-error=unused-but-set-variable"
   ];
 
-  patches = patches ++ [
+  patches = /*patches ++*/ [
     ./0001-fbcon-Implement-SDL_VIDEO_FBCON_ROTATION-for-32-bpp.patch
   ];
+
+  # XXX gocfw/wip--opendingux
+  src = builtins.fetchGit /Users/samuel/tmp/tmp/SDL/SDL;
 }))
 .override {
   pulseaudioSupport = false;
