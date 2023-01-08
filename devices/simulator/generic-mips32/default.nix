@@ -1,6 +1,10 @@
 { celunPath, config, lib, pkgs, ... }:
 
 let
+  inherit (lib)
+    mkForce
+    mkMerge
+  ;
   inherit (config.device) nameForDerivation;
 in
 {
@@ -28,6 +32,19 @@ in
   boot.cmdline = [
     "video=cirrusfb:320x240-16@60"
   ];
+
+  wip.kernel.structuredConfig =
+    with lib.kernel;
+    let
+      inherit (config.wip.kernel) features;
+    in
+    mkMerge [
+      {
+        # Breaks console output entirely without a manual chvt switch
+        LOGO = mkForce no;
+      }
+    ]
+  ;
 
   build.sdcard = (pkgs.celun.image-builder.evaluateDiskImage {
     config = {
