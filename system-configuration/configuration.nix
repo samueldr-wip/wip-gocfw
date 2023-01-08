@@ -1,5 +1,10 @@
 { lib, pkgs, ... }:
 
+let
+  inherit (lib)
+    mkMerge
+  ;
+in
 {
   imports = [
     ./initramfs.nix
@@ -23,27 +28,36 @@
   ];
 
   wip.kernel = {
-    structuredConfig = with lib.kernel; {
-      # No on-screen console, ever
-      VT_CONSOLE = no;
-      FRAMEBUFFER_CONSOLE = no;
+    structuredConfig = with lib.kernel; mkMerge [
+      {
+        # Reboot the machine on panic; it might not even possible to see
+        # that the system panic'd on many devices.
+        PANIC_TIMEOUT = freeform "5";
+      }
+      {
+        # No on-screen console, ever
+        # XXX except for dev
+        VT_CONSOLE = yes;
+        FRAMEBUFFER_CONSOLE = yes;
+      }
+      {
+        # Squashfs
+        MISC_FILESYSTEMS = yes;
+        SQUASHFS = yes;
+        SQUASHFS_XZ = yes;
+        # FAT
+        VFAT_FS = yes;
+        NLS_CODEPAGE_437 = yes;
+        NLS_ISO8859_1 = yes;
 
-      # Squashfs
-      MISC_FILESYSTEMS = yes;
-      SQUASHFS = yes;
-      SQUASHFS_XZ = yes;
-      # FAT
-      VFAT_FS = yes;
-      NLS_CODEPAGE_437 = yes;
-      NLS_ISO8859_1 = yes;
+        # Required
+        POSIX_TIMERS = yes;
+        FUTEX = yes;
 
-      # Required
-      POSIX_TIMERS = yes;
-      FUTEX = yes;
-
-      # For the stub rootfs feature
-      BLK_DEV_LOOP = yes;
-    };
+        # For the stub rootfs feature
+        BLK_DEV_LOOP = yes;
+      }
+    ];
     features = {
       printk = lib.mkDefault true;
       serial = lib.mkDefault true;
