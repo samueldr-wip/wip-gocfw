@@ -1,7 +1,10 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
 let
+  inherit (config.wip.gocfw) device-information;
   inherit (lib)
+    mkIf
+    mkMerge
     mkOption
     types
   ;
@@ -173,4 +176,12 @@ in
       };
     };
   };
+  config = mkMerge [
+    (mkIf (device-information.storage.built-in.type == "none") {
+      wip.gocfw.device-information.storage.built-in.size = 0;
+    })
+    (mkIf (device-information.input.buttons.power.type == "hard") {
+      wip.gocfw.device-information.input.buttons.power.held-action = "none";
+    })
+  ];
 }
