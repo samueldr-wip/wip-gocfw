@@ -23,6 +23,28 @@ in
         cpu = "rockchip-rk3326";
       };
 
+      wip.gocfw.device-information = {
+        display = { width = 480; height = 320; orientation = "clockwise"; };
+        input.buttons = {
+          menu.available = false;
+          reset.available = true;
+          power.type = "soft";
+          power.held-action = "hard-poweroff";
+          volume.type = "buttons";
+        };
+        storage = {
+          built-in = {
+            size = 1 * 1024 * 1024; # XXX verify SPI flash size
+            type = "nor";
+          };
+          external = {
+            available = true;
+            # See option documentation; technically bootable by SoC.
+            bootable = true;
+          };
+        };
+      };
+
       # Target device uses initramfs.
       wip.stage-1.enable = true;
       wip.stage-1.cpio = config.games-os.stub.filesystem.output;
