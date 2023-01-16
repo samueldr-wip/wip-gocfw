@@ -19,6 +19,7 @@ import (celun + /lib/eval-with-configuration.nix) {
   verbose = true;
   configuration = {
     imports = [
+      ./modules
       ./system-configuration/configuration.nix
     ];
   };
