@@ -33,6 +33,29 @@ in
         cpu = "ingenic-jz4770";
       };
 
+      wip.gocfw.device-information = {
+        display = { width = 320; height = 240; };
+        input.buttons = {
+          menu.available = false;
+          reset.available = true;
+          power.type = "soft";
+          power.held-action = "hard-poweroff";
+          volume.type = "buttons";
+        };
+        storage = {
+          built-in = {
+            type = "none";
+          };
+          external = {
+            available = true;
+            bootable = true;
+          };
+          additional = {
+            available = true;
+          };
+        };
+      };
+
       # Target device uses initramfs.
       wip.stage-1.enable = true;
       wip.stage-1.cpio = config.games-os.stub.filesystem.output;
