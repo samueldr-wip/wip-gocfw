@@ -13,6 +13,27 @@
     cpu = "sigmastar-ssd202d";
   };
 
+  wip.gocfw.device-information = {
+    display = { width = 640; height = 480; };
+    input.buttons = {
+      menu.available = true;
+      reset.available = false;
+      power.type = "soft";
+      power.held-action = "userspace";
+      volume.type = "wheel-hard";
+    };
+    storage = {
+      built-in = {
+        size = 16 * 1024 * 1024;
+        type = "nor";
+      };
+      external = {
+        available = true;
+        bootable = false;
+      };
+    };
+  };
+
   boot.cmdline = [
     "console=ttyS0,115200"
 
