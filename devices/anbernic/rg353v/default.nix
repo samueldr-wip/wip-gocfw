@@ -24,6 +24,31 @@ in
         cpu = "rockchip-rk3566";
       };
 
+      wip.gocfw.device-information = {
+        display = { width = 640; height = 480; };
+        input.buttons = {
+          menu.available = true;
+          reset.available = true;
+          power.type = "soft";
+          power.held-action = "userspace";
+          volume.type = "buttons";
+        };
+        storage = {
+          built-in = {
+            type = "emmc";
+            size = 16 * 1024 * 1024 * 1024;
+          };
+          external = {
+            available = true;
+            # See option documentation; technically bootable by SoC.
+            bootable = true;
+          };
+          additional = {
+            available = true;
+          };
+        };
+      };
+
       # Target device uses initramfs.
       wip.stage-1.enable = true;
       wip.stage-1.cpio = config.games-os.stub.filesystem.output;
