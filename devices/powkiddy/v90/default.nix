@@ -60,7 +60,7 @@ in
       };
 
       wip.gocfw.device-information = {
-        display = { width = 320; height = 240; };
+        display = { width = 320; height = 240; orientation = "clockwise"; };
         input.buttons = {
           menu.available = true;
           reset.available = false;
