@@ -15,11 +15,23 @@ in
       device-information = {
         display = {
           width = mkOption {
-            description = "Display width in useful pixels";
+            description = ''
+              Display width in useful pixels.
+
+              Use as-seen orientation. In other words, if the display is used
+              as landscape, width the the longer value, even if the display
+              physically is portrait and rotated.
+            '';
             type = types.int;
           };
           height = mkOption {
-            description = "Display width in useful pixels";
+            description = ''
+              Display height in useful pixels.
+
+              Use as-seen orientation. In other words, if the display is used
+              as landscape, width the the longer value, even if the display
+              physically is portrait and rotated.
+            '';
             type = types.int;
           };
           orientation = mkOption {
